@@ -1,0 +1,6 @@
+{
+    "Data Source": "derived:com.google.height:com.google.android.gms:merge_height",
+    "Data Points": [
+        {"fitValue":[{"value":{"fpVal":1.7300000190734863}}],"originDataSourceId":"raw:com.google.height:com.google.android.apps.fitness:user_input","endTimeNanos":1726399092392000000,"dataTypeName":"com.google.height","startTimeNanos":1726399092392000000,"modifiedTimeMillis":1726399117837,"rawTimestampNanos":0}
+    ]
+}

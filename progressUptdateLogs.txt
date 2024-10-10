@@ -1,0 +1,1 @@
+2024-10-09 : Parsing of the Workouts Data from the Google Fit Folder, and creating a bronze layer of df for the whole Fit Data.
