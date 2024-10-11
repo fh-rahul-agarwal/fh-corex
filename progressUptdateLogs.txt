@@ -1,2 +1,3 @@
 2024-10-09 : Parsing of the Workouts Data from the Google Fit Folder, and creating a bronze layer of df for the whole Fit Data.
 2024-10-10 : Workout Pillar Stream Data Processed.
+2024-10-11 : Google Fit API Documentation, code enhancements, apple health data discussion.
