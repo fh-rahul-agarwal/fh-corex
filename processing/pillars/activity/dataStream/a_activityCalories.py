@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 class AActivityCalories:
     def __init__(self, googleFit_df, *args):
         # Filter for step count records using the specified identifier
-        self.records_df = googleFit_df[(googleFit_df["dataSource"] == 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended') & (googleFit_df["originDataSourceId"] != 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended')].copy()
-        self.records_df['value'] = pd.to_numeric(self.records_df['value'], errors='coerce')
-        self.records_df.dropna(subset=['value'], inplace=True)
+        self.records_df = googleFit_df[(googleFit_df['data_source'] == 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended') & (googleFit_df["originDataSourceId"] != 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended')].copy()
+        self.records_df['fit_value'] = pd.to_numeric(self.records_df['fit_value'], errors='coerce')
+        self.records_df.dropna(subset=['fit_value'], inplace=True)
         self.value_generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.unit = 'kcal'
 
@@ -65,8 +65,8 @@ class AActivityCalories:
         return filtered_df.reset_index(drop=True)
 
     def _handle_empty_records(self):
-        return pd.DataFrame(columns=['userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 'modifiedTime', 'startDate', 
-                                     'endDate', 'unit', 'value'])
+        return pd.DataFrame(columns=['userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 'modifiedTime', 'startDate', 
+                                     'endDate', 'unit', 'fit_value'])
 
     def process(self):
         filtered_by_type = self.filtered_records_df
@@ -74,7 +74,7 @@ class AActivityCalories:
         final_df['valueGeneratedAt'] = self.value_generated_at
         final_df['unit'] = self.unit
         final_df['dateSorting'] = pd.to_datetime(final_df['startDate']).dt.date
-        final_df = final_df.sort_values(by=['dateSorting', 'type'], ascending=False, ignore_index=True)
+        final_df = final_df.sort_values(by=['dateSorting', 'dataTypeName'], ascending=False, ignore_index=True)
 
-        return final_df[['userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 'modifiedTime', 'startDate', 
-                        'endDate', 'unit', 'value']].copy()
+        return final_df[['userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 'modifiedTime', 'startDate', 
+                        'endDate', 'unit', 'fit_value']].copy()

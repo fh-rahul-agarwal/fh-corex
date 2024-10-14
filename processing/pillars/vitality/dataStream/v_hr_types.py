@@ -48,8 +48,8 @@ class VHeartRate:
 
     def _filter_data(self, df, start_date, end_date=None):
         if df.empty:
-            return pd.DataFrame(columns=['type', 'originDataSourceId', 'dataSource', 'startDate', 
-                                         'endDate', 'value_type', 'value'])
+            return pd.DataFrame(columns=['dataTypeName', 'originDataSourceId', 'data_source', 'startDate', 
+                                         'endDate', 'value_type', 'fit_value'])
 
         df['startDate'] = pd.to_datetime(df['startDate']).dt.tz_localize(None)
         df['endDate'] = pd.to_datetime(df['endDate']).dt.tz_localize(None)
@@ -88,7 +88,7 @@ class VHeartRate:
     def _flag_sleep_records(self):
         sleep_values = ['derived:com.google.sleep.segment:com.google.android.gms:merged']
         for sleep_type in sleep_values:
-            sleep_df = self.filtered_records_df[self.filtered_records_df['dataSource'] == sleep_type].copy()
+            sleep_df = self.filtered_records_df[self.filtered_records_df['data_source'] == sleep_type].copy()
             for _, sleep_row in sleep_df.iterrows():
                 sleep_start = sleep_row['startDate']
                 sleep_end = sleep_row['endDate']
@@ -100,7 +100,7 @@ class VHeartRate:
             'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended'
         ]    
         for workout_type in workout_types:
-            workout_df = self.filtered_records_df[(self.filtered_records_df['dataSource'] == workout_type) & (self.filtered_records_df['originDataSourceId'] != 
+            workout_df = self.filtered_records_df[(self.filtered_records_df['data_source'] == workout_type) & (self.filtered_records_df['originDataSourceId'] != 
                         'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended')].copy()
             for _, workout_row in workout_df.iterrows():
                 workout_start = workout_row['startDate']
@@ -114,7 +114,7 @@ class VHeartRate:
             'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps'
         ]
         for activity_type in activity_types:
-            activity_df = self.filtered_records_df[self.filtered_records_df['dataSource'] == activity_type].copy()
+            activity_df = self.filtered_records_df[self.filtered_records_df['data_source'] == activity_type].copy()
             for _, activity_row in activity_df.iterrows():
                 activity_start = activity_row['startDate']
                 activity_end = activity_row['endDate']
@@ -131,17 +131,17 @@ class VHeartRate:
         ).astype(int)
 
     def process(self):
-        heart_rate_df = self.filtered_records_df[self.filtered_records_df['dataSource'] == 'derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm'].copy()
+        heart_rate_df = self.filtered_records_df[self.filtered_records_df['data_source'] == 'derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm'].copy()
         if heart_rate_df.empty:
             return heart_rate_df
         
         heart_rate_df['unit'] = self.unit
         heart_rate_df['valueGeneratedAt'] = self.value_generated_at
-        heart_rate_df['value'] = heart_rate_df['value'].astype(float)
+        heart_rate_df['fit_value'] = heart_rate_df['fit_value'].astype(float)
         heart_rate_df['startDate'] = pd.to_datetime(heart_rate_df['startDate'])
         heart_rate_df['dateSorting'] = heart_rate_df['startDate'].dt.date
-        heart_rate_df = heart_rate_df.sort_values(by=['dateSorting', 'startDate', 'type'], ascending=(False, True, False), ignore_index=True)
+        heart_rate_df = heart_rate_df.sort_values(by=['dateSorting', 'startDate', 'dataTypeName'], ascending=(False, True, False), ignore_index=True)
         
-        return heart_rate_df[['userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 
-                               'modifiedTime', 'startDate', 'endDate', 'unit', 'value', 
+        return heart_rate_df[['userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 
+                               'modifiedTime', 'startDate', 'endDate', 'unit', 'fit_value', 
                                'sleep', 'activity', 'workout', 'resting']].reset_index(drop=True)

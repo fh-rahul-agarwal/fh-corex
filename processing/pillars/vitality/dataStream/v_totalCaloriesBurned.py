@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 class VTotalCalories:
     def __init__(self, googleFit_df, *args):
-        self.records_df = googleFit_df[googleFit_df["dataSource"] == 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended'].copy()
+        self.records_df = googleFit_df[googleFit_df['data_source'] == 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended'].copy()
         self.unit = 'kcal'
         self.value_generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
@@ -47,10 +47,18 @@ class VTotalCalories:
         return filtered_df.drop_duplicates().reset_index(drop=True)
 
     def _filter_data(self, df, start_date, end_date=None):
-        df.loc[:, 'modifiedTime'] = pd.to_datetime(df['modifiedTime']).dt.tz_localize(None)
+        df['startDate'] = pd.to_datetime(df['startDate']).dt.tz_localize(None)
+        df['endDate'] = pd.to_datetime(df['endDate']).dt.tz_localize(None)
+
         start_of_day = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = end_date.replace(hour=23, minute=59, second=59, microsecond=999999) if end_date else start_of_day.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return df[(df['modifiedTime'] >= start_of_day) & (df['modifiedTime'] <= end_of_day)].reset_index(drop=True)
+        if end_date:
+            end_of_day = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            filtered_df = df[(df['startDate'] >= start_of_day) & (df['startDate'] <= end_of_day) & (df['endDate'] <= end_of_day)].copy()
+        else:
+            end_of_day = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            filtered_df = df[(df['startDate'] >= start_of_day) & (df['startDate'] <= end_of_day) & (df['endDate'] <= end_of_day)].copy()
+
+        return filtered_df.reset_index(drop=True)
 
     def _handle_empty_records(self):
         print(f'No data available for the given input.')
@@ -82,13 +90,13 @@ class VTotalCalories:
     def process(self):
         calories_df = self.filtered_records_df.copy()
         if calories_df.empty:
-            return calories_df[['userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 'modifiedTime', 'startDate', 'endDate', 'unit', 'value', 'activeCalories', 'restingCalories']].reset_index(drop=True)
+            return calories_df[['userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 'modifiedTime', 'startDate', 'endDate', 'unit', 'fit_value', 'activeCalories', 'restingCalories']].reset_index(drop=True)
         
         calories_df['unit'] = self.unit
         calories_df['valueGeneratedAt'] = self.value_generated_at
-        calories_df['value'] = calories_df['value'].astype(float)
+        calories_df['fit_value'] = calories_df['fit_value'].astype(float)
         calories_df['startDate'] = pd.to_datetime(calories_df['startDate'])
         calories_df['dateSorting'] = calories_df['startDate'].dt.date
-        #calories_df = calories_df.sort_values(by=['dateSorting', 'startDate', 'type'], ascending=(False, True, False), ignore_index=True)
+        #calories_df = calories_df.sort_values(by=['dateSorting', 'startDate', 'dataTypeName'], ascending=(False, True, False), ignore_index=True)
 
-        return calories_df[['userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 'modifiedTime', 'startDate', 'endDate', 'unit', 'value', 'activeCalories', 'restingCalories']].reset_index(drop=True)
+        return calories_df[['userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 'modifiedTime', 'startDate', 'endDate', 'unit', 'fit_value', 'activeCalories', 'restingCalories']].reset_index(drop=True)

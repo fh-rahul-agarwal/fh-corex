@@ -13,7 +13,7 @@ class SSleepType:
     }
     
     def __init__(self, googleFit_df, *args):
-        self.records_df = googleFit_df[googleFit_df['dataSource'] == 'derived:com.google.sleep.segment:com.google.android.gms:merged'].copy()
+        self.records_df = googleFit_df[googleFit_df['data_source'] == 'derived:com.google.sleep.segment:com.google.android.gms:merged'].copy()
         
         if self.records_df.empty:
             self._handle_empty_records()
@@ -59,10 +59,18 @@ class SSleepType:
         return filtered_df.drop_duplicates().reset_index(drop=True)
 
     def _filter_data(self, df, start_date, end_date=None):
-        df.loc[:, 'modifiedTime'] = pd.to_datetime(df['modifiedTime']).dt.tz_localize(None)
+        df['startDate'] = pd.to_datetime(df['startDate']).dt.tz_localize(None)
+        df['endDate'] = pd.to_datetime(df['endDate']).dt.tz_localize(None)
+
         start_of_day = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = end_date.replace(hour=23, minute=59, second=59, microsecond=999999) if end_date else start_of_day.replace(hour=23, minute=59, second=59, microsecond=999999)
-        return df[(df['modifiedTime'] >= start_of_day) & (df['modifiedTime'] <= end_of_day)].reset_index(drop=True)
+        if end_date:
+            end_of_day = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            filtered_df = df[(df['startDate'] >= start_of_day) & (df['startDate'] <= end_of_day) & (df['endDate'] <= end_of_day)].copy()
+        else:
+            end_of_day = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            filtered_df = df[(df['startDate'] >= start_of_day) & (df['startDate'] <= end_of_day) & (df['endDate'] <= end_of_day)].copy()
+
+        return filtered_df.reset_index(drop=True)
 
     def _handle_empty_records(self):
         print("No Sleep data available for the specified dates.")
@@ -76,20 +84,20 @@ class SSleepType:
         return self.SLEEP_STAGE_MAPPING.get(value, 'Unknown')
 
     def _format_output(self):
-        self.records_df['value'] = self.records_df['value'].apply(self._map_sleep_stage)
+        self.records_df['fit_value'] = self.records_df['fit_value'].apply(self._map_sleep_stage)
         self.records_df['duration'] = self.records_df.apply(self._calculate_duration, axis=1)
         self.records_df['unit'] = 'min'
         self.records_df['valueGeneratedAt'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         return self.records_df[[ 
-            'userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 
-            'modifiedTime', 'startDate', 'endDate', 'value', 'unit', 'duration'
+            'userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 
+            'modifiedTime', 'startDate', 'endDate', 'fit_value', 'unit', 'duration'
         ]]
 
     def process(self):
         result_df = self._format_output().copy()
         result_df['dateSorting'] = pd.to_datetime(result_df['modifiedTime'], errors='coerce').dt.date
-        return result_df.sort_values(by=['dateSorting', 'type'], ascending=False, ignore_index=True)[[
-            'userName', 'valueGeneratedAt', 'type', 'originDataSourceId', 'dataSource', 'value', 
+        return result_df.sort_values(by=['dateSorting', 'dataTypeName'], ascending=False, ignore_index=True)[[
+            'userName', 'valueGeneratedAt', 'dataTypeName', 'originDataSourceId', 'data_source', 'fit_value', 
             'modifiedTime', 'startDate', 'endDate', 'unit', 'duration'
         ]]
